@@ -1,0 +1,169 @@
+							Vector
+一 理论：
+	1.扩充空间（不论多大）都应该这样做：
+（1）配置一块新空间
+（2）将旧元素一一搬往新址
+（3）把原来的空间释放还给系统
+2.vector 的数据安排以及操作方式，与array 非常相似。两者的唯一差别在于空间的利用的灵活性。Array 的扩充空间要程序员自己来写。
+
+二 实际应用：
+1.
+Vector 的数据成员：
+Protected:
+	Iterator start;					//表示目前使用空间的头
+	Iterator finish;					//表示目前使用空间的尾
+	Iterator end_of_storage;			//表示目前可用空间的尾
+（注意这几个数据成员在外部不可以使用，他们是protected ， 所以只能通过函数得到他们）
+Public:
+	Iterator 						//vector 的迭代器(是普通指针)
+
+Vector的重要成员函数
+Public:
+	Iterator begin();				//返回start
+	Iterator end();					//返回 end
+	Reference front();				//返回首元素的引用
+	Reference back();				//返回尾元素的引用
+
+	Size_type size();				//返回使用空间的大小
+	Size_type capacity();			//返回容量的大小
+	Void push_back(const T& x);		//将元素插入到最尾端
+(注意当用push_back 向vector 尾部加元素的时候,如果当前的空间不足,vector 会重新申请空间，这次申请的空间是原来的空间大小的1.5倍，也就是新的可用空间将增加为原来的1.5倍)
+	Void pop_back();				//将最尾端的元素取出
+（注意当用pop_back 删除尾部的元素时,vector 的capacity 是不会变化的）
+	Iterator erase(iterator position)	//清除某位置上的元素,vector的使用空间会减少
+	Void insert(插入的位置，插入的数值) //在某个位置才插入多少个元素，vector 的使用空间会增加
+	Void clear()				//清除所有元素,vector 的使用空间减为零,可用空间不变
+	
+
+	注：Iterator find(起始位置，结束位置, 查找的元素值) //找到指定的值的位置
+他不是vector 的成员而是一个c++ 提供的函数
+List
+一．理论：
+STL list 是一个双向链表，迭代器具备前移和后移的能力。list 有一个重要的性质:插入操作和结合操作会造成原有的迭代器失效。应用时应该用<list>
+二．实际应用：
+
+1.以下操作同vector 
+List<int> list;
+Ilist.push_back(0);
+Ilist.begin();
+Ilist.end();
+Ilist.insert();
+Ilist.erase();
+Ilist.clear();
+2.以下为list 的特有操作
+（1）Void push_front(const T &x);		//插入一个结点，作为头结点
+（2）Void push_back(const T &x);		//插入一个结点，作为尾结点
+（3）Void pop_front();				//移除头结点
+（4）Void pop_back();				//移除尾结点
+（5）Void remove(const T&value);		//将数值为value的所有元素移除
+（6）Void unique();					//将“连续而相同的元素”移除只剩一个
+（7）Void splice(iterator position, list &x); 			//将x 结合于position所指位置之前。X 必须不同于*this
+（8）Void splice(iterator position, list&, iterator i);		//将i所指的元素结合于position所指位置之前。Position 和 i 可指向同一个list
+（9）Void splice(iterator position, list&, iterator first, iterator lsat);	//将[first, last)内的所有元素结合于 position 所指的位置之前,position和[first, last)可指向同一个list,但是position 不能位于[first, last)之内。
+（10）void merge(list& x);			//将x合并到*this 身上。两个lists 的内容都必须先经过递增排序。
+（11）void reverse();				//将*this 的内容逆向重置
+（12）void sort();					//将list 的元素进行升序排序
+
+
+
+
+
+
+
+
+
+
+
+					Deque
+一．理论：
+1.Deque 是一种双向开口的连续性空间。可以在头尾两端分别做元素的插入和删除操作。Vector 从技术观点也可以在头尾两端进行插入和删除操作，但是其头部操作的效率很低。
+2.deque 没有容量的观念。它是动态以分段连续空间组合而成,随时可以增加一块更大的空间，然后复制元素。
+3.deque 的迭代器不是普通的指针，其复杂度比vector 复杂的多。除非必要，我们应该尽量选择使用vector 而非 deque。
+4.deque 由一段一段的定量连续空间构成。一旦有必要在deque 的前端和尾端增加新空间，便配置一段定量连续空间，串接在整个deque 的头端或尾端。
+5.可以使用下标的操作
+6.应用时应该加<deque>
+二.	实际应用：
+1.deque 的其他操作基本同vector
+(1)push_back();
+(2)push_front();
+(3)pop_back();
+(4)pop_front();
+(5)clear();
+(6)erase();
+(7)insert();
+(8)resize(); 			//重新设置deque的长度大小
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+							Map
+一．理论：
+1.Map 的特性是，所有元素都会根据元素的键值自动被排序，map的所有元素都是pair，同时拥有实值(value)和键值(key)。Pair的第一元素被视为键值，第二元素被视为实值。Map 不允许两个元素拥有相同的键值。
+2.map 的键值关系到map的元素的排列规则，任意改变map元素键值将严重破坏map的组织。所以不可以通过map 的迭代器来改变map 的键值。但是可以通过迭代器来修改元素的实值。
+二．实际应用
+	1.使用map 时首先包括头文件: #include<map>
+	2.使用时应该加上宏：#pragma warning (disable:4786) 来去除警告
+	3.构造函数:
+		Map<string,int> simap;					//第一个参数是键值、第二个参数是实值
+	4. iterator find(键值);						//它是map 的成员函数,用来找指定键值map的迭代器
+	5.pair<string,int> pairTemp(string(“A”),5);		//pair的构造函数
+	6.iterator insert(iterator position, pairTemp);		//将pairTemp 插入到map 中
+	7.void erase(iterator position);				//删除指定位置上的 map 元素
+	8.size_type count(键值);						//判断该键值的Map 元素是否存在
+	9.size_type size();							//返回map 中的元素的个数
+	10.iterator lower_bound(键值);		 		//返回该键值或者大于该键值的map 的迭代器
+	11.iterator upper_bound的(键值);				//返回大于该键值的map 的迭代器
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+							Set
+一．理论：
+1.Set的特性是，所有元素都会根据元素的键值自动被排序，Set 的元素不像Map那样可以同时拥有实值和键值，Set 元素的键值就是实值，实值就是键值。Set 不允许两个元素有相同的键值。
+2.因为Set 元素值就是其键值，关系到 Set 元素的排列规则。如果任意改变Set 的元素值，会严重的破坏Set组织。
+三．实际应用：
+1.初始化
+可以定义一个数组，将数组直接赋值给Set的元素。这时把数组中的重复元素删除。
+Int a[5]={1,2,3,4,5};
+Set<int> iset(a,a + 5);
+
+	2..insert(要插入的值);				
+	3.erase(要删除的值);
+	4.find(要查找的值);
+	5.count(要数的值);			//返回该值的数值
+	6.clear();
+	7.lower_bound();
+	8.upper_bound();
+	
