@@ -1,9 +1,8 @@
 在 C++ 中，你也许经常使用 new 和 delete 来动态申请和释放内存，但你可曾想过以下问题呢？
-new 和 delete 是函数吗？
-new [] 和 delete [] 又是什么？什么时候用它们？
-你知道 operator new 和 operator delete 吗？
-为什么 new [] 出来的数组有时可以用 delete 释放有时又不行？
-…
+new 和 delete 是函数吗？
+new [] 和 delete [] 又是什么？什么时候用它们？
+你知道 operator new 和 operator delete 吗？
+为什么 new [] 出来的数组有时可以用 delete 释放有时又不行？
 
 
 new 和 delete 到底是什么？
