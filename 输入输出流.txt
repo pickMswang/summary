@@ -1,0 +1,235 @@
+C/C++输入输出流总结 
+C++支持两种I/O，第一种是从C语言继承来的，一种是由C++定义的面向对象I/O系统。
+1、int getchar(void);返回一个整数值，也可以指定这个值为char变量，因为这个字符包含于低位字节中(高位字节通常为0)，如果有错，getchar()返回EOF。但是他有一个潜在的问题，正常情况下，getchar()缓存输入，直到键入了回车键(这个大家应该深有体会，就是getchar()貌似只认识回车键，原来是这个原因)这称为行缓冲输入，在键入的字符实际传送给程序之前必须敲入一个回车键。
+2、int putchar(int c);
+虽然putchar()带一个整数参数，通常可以用一个字符的变元调用它，但是只有其低位字节被实际输出到屏幕上，putchar()函数放回被写入的字符，若操作失败，返回EOF(宏EOF被定义于stdio.h中，通常其值为-1)。
+3、int getch(void);
+   int getche(void);
+两个最常用的交互式函数，对于大多数编译器，这些函数的原型都可在头文件conio.h中找到，对于某些编译器中这些函数前面有一下划线。如_getch()和_getche();这就是为什么在VS2008中经常提示要在前面加一个'_'.
+4、char* gets(char* str);
+读取从键盘上输入的字符串并把它存放在由其他变元所指的地址中，它从键盘读入字符，直到遇到回车键为止。回车键不输入串的一部分，相反，将空结束符放在串尾来代替，并且由gets()返回。但是使用gets()是要小心，因为它不对正在接受输入的字符数组执行边界检查。因此，用户可以键入比数组能够容纳的更多的字符。尽管对于你使用的范例程序和简单使用工具是很好的，在商用代码中一般不是用它。它的的替代物是fgets();稍后描述。
+5、int puts(const char* str);
+将它的字符串变元写到屏幕上，后跟一新行。它的调用比printf()；开销小，因为puts()只能输入字符串，不能输出数字或进行格式转换，因而puts()用的空间少且速度比printf()快。因此函数puts()经常用于代码优化，操作失败，函数puts()返回EOF，否则返回非负值。
+6、int printf(const char* control_string,...);
+printf()函数返回写入字符的数目，如果出现一个错误，则返回control_string(控制串)有两种类型项目组成。第一类由将打印在屏幕上的字符串组成，第二类包括自定义其后变元显示方式的格式限定符。格式限定符以一个百分号开头，后跟格式化码，变元列表中的变元数与格式限定符完全相等，格式限定符与变元按顺序从左到右匹配。
+7、int scanf(const char* control_string...);
+可以读入各种内嵌类型并自动将其转换为适当的格式。返回成功的赋予了一个值的数据项。如果出现一个错误，scanf()返回EOF。控制串包括三类字符：
+a、格式限定符 b、空白字符 c、非空白字符
+格式限定符以百分号开始，告诉scanf()下一步要读的数据是什么类型。
+8、FILE* fopen(const char*filename,const*char* mode)
+打开一个文件
+mode合法值如下：
+r   为读操作打开一个文本文件
+w   为写操作创建一个文本文件
+a  附加到一个文本文件
+rb  为读操作打开一个二进制文件
+wb  为写操作创建一个二进制文件
+ab  附加到一个二进制文件
+r+  为读/写操作打开一个文本文件
+w+   为读/写操作创建一个文本文件
+a+  为读/写操作附加或创建一个文本文件
+r+b  为读/写操作打开一个二进制文件
+w+b  为读/写操作创建一个二进制文件
+a+b  为读/写操作附加一个二进制文件
+如果打开文件失败，fopen()返回一个空指针。
+9、int fclose(FILE* fp);
+   关闭一个由fopen()打开的文件，把留在磁盘缓冲区的数据写入文件并在操作系统级正式关闭文件。关闭流文件失败会产生各种麻烦，如：丢失数据，破坏文件和程序中出现间歇的错误等。flose()也释放与流文件控制块，使它可以重用。有时，由于操作系统一次同时打开的文件数量有限，因此必须在关闭一个文件后再打开另一个文件。  返回0标志着文件关闭成功。如果关闭失败，则返回EOF。可用标准函数ferror()来确定和报告出错消息。通常，fclose()仅在磁盘中驱动器中过早移走或磁盘上没有更多的空间时报错。
+10、int putc(int ch，FILE* fp)；
+把一个字符写到文件中,如果操作成功，则函数返回被输出的字节；否则，返回EOF
+11、int getc(FILE* fp);
+从某一文件读一个字符,函数getc()读到文件尾时返回EOF标志，如果发生错误，也返回EOF。
+12、fgetc()，同getc()
+13、int fgets(const char*str,int length,FILE* fp);从某一文件中读取一个字符串，直到读到换行符或读完length-1个字符，如果读到新行，它是原字符串的一部分(不像gets()那样另起新串)，结果字符串将以NULL终止。如果操作成功，则函数返回str，否则返回空指针。
+14、int fputs(const char*str,FILE*fp)，把str指向的字符串写到指定的流中，如果失败，则返回EOF
+15、fseek()，在文件中查找一个特定的字节
+16、ftell()，返回当前文件的位置
+17、fprintf()，输出到磁盘文件上
+18、fscanf()，从磁盘中读数据
+19、int feof(FILE* fp);
+若到文件尾，返回真值.既可用于二进制文件，也可应用于文本文件
+eg:
+ while(!feof(fp)) ch = getc(fp);
+20、int ferror(FILE* fp);
+函数确定是否在文件操作期间出错。fp是有效的文件指针。在文件操作期间如果有错，则函数返回true，否则返回false。由于每个文件操作均设置错误条件，因而应在每个文件中操作后立即调用ferror()，否则会丢失错误信息。
+21、void rewind(FILE* fp),把文件位置指针重新置于文件的起始位置，fp是有效的文件指针，
+22、int remove(const char*filename)，清除一个文件,操作成功，返回0，操作失败返回非零值。
+23、int fflush(FILE* fp);
+清空一个输出流的内容，将任何缓冲区的内容写到与fp相关的文件中，如果在fp为空时调用fflush(),则所有为输出打开的文件被清空。操作成功返回0，否则返回EOF。
+24，size_t fread(void* buffer,size_t num_byte,size_t count,FILE* fp);
+buffer 是一个指针，指向一个接收文件中数据的存储区，count的值指出要写多少项。返回读入的项的数目，如遇到文件的结尾或操作失败。这个值可能少于count。
+25、size_t fwrite(const void * buffer,size_t num_byte,size_t count ,FILE* fp);
+buffer 是一个指针，指向要写入文件中的信息快。count的值指出要写多少项。返回写入项的数目，这个值永远等于count，除非操作失败。
+注意：size_t类型被定义为某种无符号整数，fp是一个指向已经打开流的文件指针。fwrite()和fread()最大的用途之一是可以写用户自定义的数据类型，特别是结构体类型
+26、int fseek(FILE* fp,long int numbytes,int origin);
+fp是由fopen()返回的指针，numbytes是从文件的origin位置到当前位置的字节，是下面的宏之一：
+origin      宏名
+文件开始处    SEEK_SET
+当前位置    SEEK_CUR
+文件末尾    SEEK_END
+可以用fseek()来寻找任何数据类型的倍数，方法是用想要的项数乘以数据的长度。eg：fseek(fp,9*sizeof(struct myStruct),SEEK_SET);
+27、long int ftell(FILE* fp);
+决定一个文件的当前位置，返回与fp关联的文件的当前位置的地址。如果失败，返回-1.
+28、int fprintf(FILE* fp,const char* control_string...);
+int fscanf(FILE* fp,const char* control_string...);
+注意：尽管fprintf()和scanf()是从磁盘文件中读写数据最容易的方法，但却并不是最有效的方法。由于格式化的ASCⅡ数据写入文件的格式与在屏幕上显示的相同(而不是二进制方式)，因而调用时要引起额外的开销。如果要考虑速度与文件长度，最好使用fread()和fwrite()
+C++内置流
+流    含义   默认设备
+cin   标准输入  键盘
+cout  标准输出  屏幕
+cerr  标准错误输出 屏幕
+clog  cerr的缓冲版本 屏幕
+cin、cout、cerr和C的stdin、stdout、stderr相对应。
+C++附加流：win、wout、werr、wlog它们都是款字符版本的标准流，宽字符类型为wchar_t，一般为16位。
+29、fmtflags setf(fmtflags flags);
+该函数返回格式标记先前的并开启又flags指定的那些标记。
+eg：
+cout.setf(ios::showpoint);
+cout.setf(ios::showpos);
+或者cout.setf(ios::showpoint | ios::showpos);
+30、void unsetf(fmtflags flags);
+flags指定的标记被清除
+eg:
+cout.setf(ios::uppercase | ios::scientfic);
+cout.unsetf(ios::uppercase);
+31、fmtflags flags();
+返回每个格式标记的当前位置。
+32、fmtflags flags(fmtflags f);
+设置某个流的所有标记。
+eg:
+ios::fmtflags f = ios::showpos | ios::showbase | ios::oct | ios::right;
+cout.flags(f);//set all flags
+33、streamsize width(streamsize w);
+修改最小域宽，w是将要改成的域宽，先前的域宽返回。
+34、streamsize precision(streamsize p);
+当输出浮点型时，可以使用precision()函数来确定数字的精确位数。
+35、char fill(char ch);
+填充指定字符，默认情况下是空格
+C++操作算子
+操作算子  用途    输入/输出
+boolapha  开启boolapha标记 输入/输出
+dec    开启dec标记   输出
+endl   输出一个换行符并刷新流 输出
+ends   输出一个null   输出
+fixed   开启fixed标记   输出
+flush   刷新一个流    输出
+hex    开启hex标记    输出/输入
+internal  开启internal标记  输出
+left   开启left标记   输出
+noboolalpha  关闭noboolalpha标记  输入/输出
+noshowbase  关闭showbase标记  输出
+noshowpoint  关闭showpoint标记  输出
+noshowpos  关闭showpos标记   输出
+noskipws  关闭skipws标记   输入
+nounitbuf  关闭unitbuf标记   输出
+nouppercase  关闭uppercase标记  输出
+oct    开启oct标记    输入/输出
+resetiosflags(fmtflags f) 关闭f中指定的标记 输入/输出
+right    开启right标记   输出
+scientific  开启scientific标记  输出
+setbase(int base) 将基数设为base  输入/输出
+setfill(int ch)   将填充字符设置为ch 输出
+setiosflags(fmtflags f)开启f中指定的标记 输入/输出
+setprecision(int p)  设置字符精度  输出
+setw(int w)   将域宽设置为w  输出
+showbase   开启showbase标记 输出
+showpoint   开启showpoint标记 输出
+showpos    开启showpos标记  输出
+skipws     开启skipws标记  输入
+unitbuf    开启unitbuf标记  输出
+uppercase   开启uppercase标记 输出
+ws     跳过开始的空格  输入
+注意：在访问带参数的操算子，必须在程序中包括<iomanip>
+创建自己的插入器：
+ostream& operator<<(ostream& stream,class_type obj)
+{
+ //body of inserter
+ return stream;
+}
+创建自己的析取器
+istream& operator>>(istream& stream,class_type obj)
+{
+ //body of extractor
+ return stream;
+}
+C++文件的输入和输出<fstream>
+创建一个流
+ifstream in;//input
+ofstream out;//output
+fstream io;//input and output
+36、
+void ifstream::open(const char*filename,ios::opennode mode = ios::in);
+void ofstream::open(const char*filename,ios::openmode mode = ios::out | ios::trunc);
+void fstream::open(const char* filename,ios::openmode mode = ios::in | ios::out);
+openmode:
+ios::app 使所有输出到相应文件的内容都添加到文件末尾，该值只能用于具有输出功能的文件。
+ios::ate  使得在打开文件时能够定位到文件末尾
+ios::binary  可以以二进制文件打开，默认情况下，所有文件都以文本方式打开。
+ios::in  指定为输入
+ios::out 制定我输出
+ios::trunc 销毁具有相同名字的先前文件的内容，并且将文件长度截断为0，当使用ofstream创建一个输出流时任何先前存在的具有该文件名的文件将被自动截断
+eg:
+if(!mystream)
+{
+ cout<<"Cannot open file.\n";
+ //handdle error
+}
+if(!mystream.is_open())
+{
+ cout<<"Cannot open file.\n";
+ //handdle error
+}
+37、istream &get(char &ch);
+ ostream &put(char &ch);
+eg:
+while(in.get(ch))
+ cout<<ch;
+38、istream& read(char* buf,streamsize num);
+ ostream& write(const char* buf,streamsize num);
+read()函数从流中读取num字符并将他们放入由buf所指的缓冲区。write()函数把num字符从buf所指的缓冲区写入调用流，streamsize是由C++库定义的类型--是某种类型，它可以存储能够被任何一种I/O操作转换的最大字符数。
+39、streamsize gcount();
+检查已经有多少字符被读取
+40、get()的重载版本：
+istream& get(char* buf,streamsize num);
+把字符读入由buf指向的数组，直到读取到第num-1个字符，发现了一个换行符或者遇到了文件尾。指针buf所指向的数组以null字符结束。
+istream& get(char* buf,streamsize num,char delim);
+把字符读入由buf指向的数组，直到读取到第num-1个字符，发现了由delim指定的字符或者是遇到了文件尾。指针buf所指向的数组以null字符结束。如果在输入流中遇到分隔符字符，则不会提取该字符。
+int get();
+返回相应流的下一个字符，如果遇到文件尾，则返回EOF。get()函数的这种形式类似于C的函数
+41、istream& getline(char* buf,streamsize num);
+把字符读入由buf指向的数组，直到读取到第num-1个字符，发现了一个换行符或者遇到了文件尾。指针buf所指向的数组以null字符结束。如果在出输入流中遇到换行符是，则提取该字符，但是不会将其放入buf
+ istream& getline(char* buf,streamsize num,char delim);
+把字符读入由buf指向的数组，直到读取到第num-1个字符，发现了由delim指定的字符或者是遇到了文件尾。指针buf所指向的数组以null字符结束。如果在输入流中遇到分隔符字符，则提取该字符，但是不将其放入buf
+42、bool eof();
+到达文件尾时，该函数返回true，否则返回false
+43、istream & ignore(streamsize num = 1,int_type delim = EOF);
+该函数读取和放弃字符，直到num个字符被忽略(默认值为1)或者遇到delim指定为字符(默认值为EOF)
+44、int_type peek();
+返回流中的下一个字符，如果遇到文件尾，则返回EOF(int_type 被定义为某种整数型类型)
+45、istream& putback(char c);
+返回流中的最后一个字符，c是读取最后一个字符
+46、ostream& flush();
+在缓冲区被写满数据前强行将数据写到磁盘
+47、istream& seekg(off_type offset,seekdir origin);
+ ostream& seekp(off_type offset,seekdir origin);
+off_type是ios定义的一个整数类型，可以包含offset具有的最大有效值，seekdir是一个ios定义的枚举类型，用来决定查找方式。seekg()函数可以把相关文件当前的获取指针从指定origin出偏移offset个字符，origin必须是一下三个值中的一个
+ios::beg   文件头
+ios::cur  当前位置
+ios::end  文件尾
+seekp()函数可以把相关文件当前的获取指针从指定origin出偏移offset个字符，origin必须是以上三个值之一
+48、pos_type tellg();
+ pos_type tellp();
+确定每一个文件指针的位置。pos_type是ios定义的类型，它存储函数可以返回最大值。
+I/O状态：保存在一个iostate类型的对象中，它是ios定义的枚举类型，包括一下成员:
+ios::goodbit   无错误位设置
+ios::eofbit    当遇到文件尾时为1；否则为0
+ios::failbit   当出现非致命错误时为1，否则为0
+ios::badbit    当出现致命的I/O错误时为1；否则为0
+获得I/O状体的方法：
+ 
+a、iostate rdstate();
+b、bool bad();
+   bool eof();
+   bool fail();
+   bool good();
+一旦出现错误，或许在程序继续运行之前需要清除该错误，为此，可以使用clear()函数
+void clear(iostate flags = ios::goodbit);
