@@ -1,0 +1,219 @@
+	C++类型转换及运行时类型信息(RTII)
+C++中有四种新风格的类型转换操作符，每一种操作符返回的是一个根据类型转换操作符规则转换后的对像
+cast_operator<type>(object)
+type代表要转换的类型
+object代表要转换的对像
+而cast_operator则是执行转换的操作符，它通常有四种形式，分别为动态类型转换，静态类型转换，重新解释类型转换和常类型转换符
+
+
+动态类型转换符
+动态类型转换符将一个基类的引用或者指针转换为一个派生类的引用或者指针，我们把它叫做向下类型转换
+或者将一个派生类的引用或指针转换为基类的引用或者指针，我们把它叫做向上转换，
+注意: 只有当基类拥有虚函数时才能使用动态类型转换
+1 向下类型转换指针
+向下类型转换包括转换针和引用,首先说转换指针
+Son *p = dynamic_cast<Son*>(cp);
+
+#include <iostream>
+using namespace std;
+class Father
+{
+public:
+virtual void experience(){ cout<<"父亲经验比儿子多"<<endl;}
+};
+class Son : public Father
+{
+public:
+virtual void Run()
+{
+cout<<"儿子跑和比父亲快"<<endl;
+}
+};
+int main()
+{
+Father *pFather;
+int chice;
+cout<<"(1)Father (2)Son:";
+cin>>chice;
+if(chice == 2)
+{
+pFather = new Son;
+}else{
+pFather = new Father;
+}
+Son *p = dynamic_cast<Son*>(pFather);
+if(p){
+p->Run();
+}else{
+cout<<"转换失败"<<endl;
+}
+delete pFather;
+return 0;
+}
+
+2 向下类型转换引用
+假如你要转换的是引用而不是指针，则只需要做细微变化
+Son&p = dynamic_cast<Son&>(cp);
+#include <iostream>
+using namespace std;
+class Father
+{
+public:
+virtual void experience(){ cout<<"父亲经验比儿子多"<<endl;}
+};
+class Son : public Father
+{
+public:
+virtual void Run()
+{
+cout<<"儿子跑和比父亲快"<<endl;
+}
+};
+void func(Father &r)
+{
+try{
+Son &p = dynamic_cast<Son&>(r);
+p.Run();
+}catch(bad_cast)
+{
+cout<<"转换失败"<<endl;
+}
+};
+int main()
+{
+Father pf;
+Son ps;
+func(pf);
+func(ps);
+return 0;
+}
+3 向上类型转换
+向上类型转换与向下类型转换正好相反，它将一个派生类的引用或者指针转换为基类的引用或者指针，由于这个转换为隐式的，因此不用过多的介绍
+
+
+静态类型转换
+静态类型转换即程序运行前的转换，而不是程序在运行时的运态转换，这样静类型号转换就可不依赖多态而进行，而是可以在不同层次的继承以及基本数据类型之间进行
+char ch = static_cast<int>(111);
+该行代码将int类型的数据111转换为char型数据"o"并赋给ch
+A one=static_cast<B>(two);
+p *p = new A;
+B *four = static_cast<B*>(p); //这种转换是错误的，如果p是指向B的一个指针，那么是正确的
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+A(int s):i(s){}
+void show()
+{
+cout<<"i:"<<i<<endl;
+}
+private:
+int i;
+};
+class B: public A
+{
+public:
+B(int x):A(0),j(x){}
+void show()
+{
+cout<<"j:"<<j<<endl;
+}
+private:
+int j;
+};
+int main()
+{
+B one=123;
+one.show();
+cout<<endl;
+B two = B(456);
+two.show();
+cout<<endl;
+A three = static_cast<B>(one);
+three.show();
+cout<<endl;
+A *p = &three;//定义一个指针
+B *four = static_cast<B*>(p);
+four->show(); //这里是不对的，因为p为A的指针
+char ch = static_cast<int>(111);
+cout<<endl<<ch<<endl;
+return 0;
+}
+
+
+
+
+重新解释类型转换
+重新解释类型转换符reinterdivt_cast将指针转换为其他类型的指针，比如说将一个void*指针转换为一个char*指针
+void *p();
+char *cp = reinterdivt_cast<char*>(p());
+#include <iostream>
+using namespace std;
+//返回一个void*指针的p函数，void *为“无类型指针”, void*可以指向任何类型的数据
+void *p()
+{
+static char ch[20];
+return ch;
+}
+int main()
+{
+char *cp = reinterpret_cast<char*>(p());
+strcpy(cp,"hello word");
+cout<<cp<<endl;
+return 0;
+}
+
+
+常类型转换
+const_cast可以去掉常量属性，这样常量可以被修改
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+A(int i):x(i){}
+void show()const
+{
+const_cast<A*>(this)->x++;
+cout<<x<<endl;
+}
+private:
+int x;
+};
+int main()
+{
+const A a(1); //定义一个常量对像
+//注意，const加在函数体前面表示在该成员函数内不可修改调用函数的对像的成员
+//比如说a来调用show()函数，那么函数体内不能修改a的成员的操作，比如修改a的私有成员x
+a.show();
+a.show();
+a.show();
+return 0;
+}
+
+
+
+
+运行时类型信息
+头文件typeinfo中定义了一些用来检测运行时类型信息的类型标志操作符，它们的使用如下
+#include <iostream>
+#include <typeinfo>
+using namespace std;
+class A{};
+int main()
+{
+A a;
+cout<<"a是"<<typeid(a).name()<<endl;
+int b= 3;
+if(typeid(b) != typeid(A)){
+cout<<"b不是"<<typeid(A).name()<<endl;
+}
+if(typeid(b) == typeid(1.23)){
+cout<<"b是个double类型变量"<<endl;
+}
+if(typeid(b) == typeid(int)){
+cout<<"b是个int类型变量"<<endl;
+}
+return 0;
+}
