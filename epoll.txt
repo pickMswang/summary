@@ -1,0 +1,28 @@
+epoll三个函数：
+1.int epoll_create(int size)；
+ 创建一个epoll句柄，size告诉内核监听的数目有多大
+ 创建好epoll句柄后占用一个fd 查看/proc/id/fd/    用完调用close
+2. int epoll_ctl(int epfd,int op,int fd,struct epoll_event*event);
+epoll的事件注册函数 先注册要监听的事件
+参数 1.epoll_create()的返回值
+        2.动作 EPOLL_CTL_ADD 注册新的fd到epfd
+                  EPOLL_CTL_MOD 修改已经注册的fd的监听事件
+                  EPOLL_CTL_DEL 删除一个fd从epfd
+         3.需要监听的fd
+         4.内核需要监听什么事 （一个联合体）
+            events  可以是一下几个宏的集合
+            EPOLLIN  可读
+            EPOLLOUT 可写
+           EPOLLERR 发生错误
+           EPOLLET   边缘触发
+           EPOLLONESHOT 只监听一次事件 还想监听再次放到EPOLL队列里
+ 3. int epoll_wait(int epfd,struct epoll_event*events,int maxevents,int timeout);
+等待事件的产生相当于select
+参数  2.从内核得到事件的集合 
+          3. 事件多大
+           4.超时时间 0 立即返回  -1 永远阻塞
+ 返回需要处理的事件数目 0 超时
+
+ET 当且仅当状态发生改变时才得到通知 所以read write 一直 直到出错
+LT 有时间就一直通知
+
