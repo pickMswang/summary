@@ -1,0 +1,117 @@
+C++中虚析构函数的作用
+
+   我们知道，用C++开发的时候，用来做基类的类的析构函数一般都是虚函数。可是，为什么要这样做呢？下面用一个小例子来说明：    
+    有下面的两个类： 
+class ClxBase
+{
+public:
+    ClxBase() {};
+    virtual ~ClxBase() {};
+
+    virtual void DoSomething() { cout << "Do something in class ClxBase!" << endl; };
+};
+
+class ClxDerived : public ClxBase
+{
+public:
+    ClxDerived() {};
+    ~ClxDerived() { cout << "Output from the destructor of class ClxDerived!" << endl; }; 
+
+    void DoSomething() { cout << "Do something in class ClxDerived!" << endl; };
+};
+    代码
+ClxBase *pTest = new ClxDerived;
+pTest->DoSomething();
+delete pTest;
+    的输出结果是：
+Do something in class ClxDerived!
+Output from the destructor of class ClxDerived!
+这个很简单，非常好理解。
+    但是，如果把类ClxBase析构函数前的virtual去掉，那输出结果就是下面的样子了：
+Do something in class ClxDerived!
+    也就是说，类ClxDerived的析构函数根本没有被调用！一般情况下类的析构函数里面都是释放内存资源，而析构函数不被调用的话就会造成内存泄漏。我想所有的C++程序员都知道这样的危险性。当然，如果在析构函数中做了其他工作的话，那你的所有努力也都是白费力气。
+    所以，文章开头的那个问题的答案就是－－这样做是为了当用一个基类的指针删除一个派生类的对象时，派生类的析构函数会被调用。
+    当然，并不是要把所有类的析构函数都写成虚函数。因为当类里面有虚函数的时候，编译器会给类添加一个虚函数表，里面来存放虚函数指针，这样就会增加类的存储空间。所以，只有当一个类被用来作为基类的时候，才把析构函数写成虚函数。
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+写成虚的是为了在实现多态的时候不造成内存泄露, 比如: 
+
+class a 
+{ 
+int aa; 
+public: 
+virtual ~a(){}; 
+}; 
+
+class b : public a 
+{ 
+int bb; 
+}; 
+
+如果你这样: 
+
+a *pa = new b; // upcast 
+
+然后这样: 
+
+delete pa; 
+
+这句delete, 如果你基类的析构函数不是虚的的话, 就会造成内存泄露, 具体表现为派生类的内存被释放了而基类没有. 在继承中使用多态来创建动态对象时, 比如上面的:a *pa = new b; 
+由于pa是个基类的指针, 只能识别属于基类的部分, 所以如果没有虚析构函数的话, 那么子类中特有的部分就不会被释放, 造成"经典"的释放一半, 泄露一半的内存泄露. 
+这和object slicing的原理是一样的, 至于object slicing:
+#include 
+#include 
+using namespace std; 
+
+class Pet 
+{ 
+public: 
+Pet(const string& _category_) : category(_category_){} 
+
+virtual void Desc() 
+{ 
+cout << "This is a " << category << ".\n"; 
+} 
+
+virtual const string& GetCate() 
+{ 
+return category; 
+} 
+
+virtual ~Pet(){} 
+private: 
+string category; 
+}; 
+
+class Cat : public Pet 
+{ 
+public: 
+Cat(const string& _category_, const string& _name_) 
+: Pet(_category_), name(_name_){} 
+
+virtual void Desc() 
+{ 
+cout << "This is a " << Pet::GetCate() << ".\n"; 
+cout << "Its name is " << name << endl; 
+} 
+
+private: 
+string name; 
+}; 
+
+void Describe(Pet p) // object slicing 
+{ 
+p.Desc(); 
+} 
+
+int main() 
+{ 
+Pet p("Yellow dog"); 
+Cat c("Black and white cat", "Kitty"); 
+Describe(p); 
+Describe(c); // object slicing 
+} 
+所以表现在动态对象上就会造成delete不完全, 造成内存泄露. 
+
+一般的, 只要一个类要作为其他类的基类, 那么它就一定有虚函数, 只要一个类中有虚函数, 那么它的析构函数就一定也要是虚的, 否则就会造成我以上所说的问题
