@@ -1,0 +1,223 @@
+2.1内存池的定义
+内存池（Memory Pool）是一种内存分配方式。通常我们习惯直接使用new、malloc等API申请内存，这样做的缺点在于所申请内存块的大小不定，当频繁使用时会造成大量的内存碎片并进而降低性能。
+2.2内存池的优点
+内存池则是在真正使用内存之前，预先申请分配一定数量、大小相等（一般情况下）的内存块留作备用。当有新的内存需求时，就从内存池中分出一部分内存块，若内存块不够再继续申请新的内存。这样做的一个显著优点是，使得内存分配效率得到提升。
+
+//内存池
+class CMemPool
+{
+public:
+	//uMaxSize:阀值
+	CMemPool(UINT uMaxFree = 5);
+	virtual ~CMemPool(void);
+ 
+	//列表节点
+	struct list_node
+	{
+		list_node():size(0),pbuf(NULL)
+		{}
+		UINT  size;
+		char* pbuf;
+	};
+ 
+	typedef list<list_node> LISTMEMORY;
+	typedef list<list_node>::iterator ITLISTMEM0RY;
+ 
+public:
+	//初始化阀值  uMaxSize:阀值
+	void InitMem(UINT uMaxFree);
+ 
+	//申请内存
+	char * NewMem(size_t size);
+ 
+	//释放内存
+	void FreeMem(char * pbuf);
+ 
+	//释放所有内存
+	void FreeAllMem();
+ 
+protected:
+	//分配一块新的内存 - 使用在临界区内
+	char * Newbuf(size_t size);
+	//获取最大内存块大小 - 使用在临界区内
+	UINT GetMaxBuf();
+ 
+private:
+	CRITICAL_SECTION    m_cris;       //缓存临界区
+ 
+	LISTMEMORY          m_listFree;   //空闲的内存块
+	LISTMEMORY          m_listUsed;   //使用中的内存块
+ 
+	UINT                m_uMaxFree;   //空闲内存阀值,超过此阀值可直接释放-返还给系统
+};
+
+#include "StdAfx.h"
+#include "MemPool.h"
+#include <assert.h>
+ 
+ 
+CMemPool::CMemPool(UINT uMaxFree/* = 5*/)
+					: m_uMaxFree(uMaxFree)
+{
+	//判断参数是否合法
+	assert(uMaxFree);
+	//临界区
+	InitializeCriticalSection(&m_cris);
+}
+ 
+CMemPool::~CMemPool(void)
+{
+	EnterCriticalSection(&m_cris);
+	ITLISTMEM0RY it;
+	//释放空闲队列内存
+	if (!m_listFree.empty())
+	{
+		for(it = m_listFree.begin();it != m_listFree.end();it++)
+		{
+			if( (*it).pbuf )
+				delete[] (*it).pbuf;
+		}
+		m_listFree.clear();
+	}
+	//释放使用状态的内存
+	if (!m_listUsed.empty())
+	{
+		for(it = m_listUsed.begin();it != m_listUsed.end();it++)
+		{
+			if( (*it).pbuf )
+				delete[] (*it).pbuf;
+		}
+		m_listUsed.clear();
+	}
+	LeaveCriticalSection(&m_cris);
+	//删除临界区
+	DeleteCriticalSection(&m_cris);
+}
+//初始化阀值
+void CMemPool::InitMem(UINT uMaxFree)
+{
+	//判断参数是否合法
+	assert(uMaxFree);
+	m_uMaxFree = uMaxFree;
+}
+//申请内存
+char * CMemPool::NewMem(size_t size)
+{
+	EnterCriticalSection(&m_cris);
+ 
+	char * ptr = NULL;
+	//判断当前是否有空闲内存块
+	if(!m_listFree.empty() && GetMaxBuf()>=size)
+	{
+		ITLISTMEM0RY it = m_listFree.begin();
+		for(; it!=m_listFree.end(); it++)
+		{
+			if( (*it).size >= size )
+			{
+				ptr = (*it).pbuf;
+				//把内存块放到使用队列中
+				m_listUsed.push_back(*it);
+				m_listFree.erase(it);
+				//退出
+				LeaveCriticalSection(&m_cris);
+				return ptr;
+			}
+		}
+	}
+	//分配一块新的内存
+	try{
+		ptr = Newbuf(size);
+	}
+	catch(...)
+	{
+	}
+	LeaveCriticalSection(&m_cris);
+	return ptr;
+}
+ 
+//释放内存
+void CMemPool::FreeMem(char * pbuf)
+{
+	if (!pbuf) return;
+	EnterCriticalSection(&m_cris);
+	//在使用队列中查找要释放的内存块
+	ITLISTMEM0RY it = m_listUsed.begin();
+	for(;it != m_listUsed.end();++it)
+	{
+		if ( (*it).pbuf == pbuf)
+		{
+			//判断当前空闲队列是否大于初始值
+			if (m_listFree.size() < m_uMaxFree)
+			{
+				//如果小于阀值，则将内存块放到空闲队列
+				memset( (*it).pbuf,0, (*it).size);
+				m_listFree.push_back(*it);
+			}
+			else
+			{
+				//判断当前空闲队列大于或等于阀值，则将内存块释放
+				if( (*it).pbuf )
+					delete[] (*it).pbuf;
+			}
+			//将内存块从使用队列中删除
+			m_listUsed.erase(it);
+			break;
+		}
+	}
+	LeaveCriticalSection(&m_cris);
+}
+ 
+//释放所有内存
+void CMemPool::FreeAllMem()
+{
+	//将使用列表中的内存块移至空闲列表
+	EnterCriticalSection(&m_cris);
+	ITLISTMEM0RY it = m_listUsed.begin();
+	for(; it != m_listUsed.end() && m_listFree.size() < m_uMaxFree; it++)
+	{
+		if( (*it).pbuf && (*it).size)
+		{
+			memset( (*it).pbuf,0,(*it).size);
+			m_listFree.push_back(*it);
+		}
+	}
+	//超过阀值部分直接销毁
+	for(;it != m_listUsed.end(); it++)
+	{
+		if( (*it).pbuf )
+			delete[] (*it).pbuf;
+	}
+	//清空使用列表
+	m_listUsed.clear();
+	LeaveCriticalSection(&m_cris);
+}
+ 
+//分配一块新的内存
+char * CMemPool::Newbuf(size_t size)
+{
+	list_node node;
+	//分配一块新的内存
+	node.pbuf = new char[size];
+ 
+	ASSERT(node.pbuf);
+	if(!node.pbuf)
+		return NULL;
+	node.size = size;
+	memset(node.pbuf,0,node.size);//清理内存
+ 
+	m_listUsed.push_back(node);
+	return node.pbuf;
+}
+ 
+//获取最大内存块大小
+UINT CMemPool::GetMaxBuf()
+{
+	UINT uiMax = 0;
+	ITLISTMEM0RY it = m_listFree.begin();
+	for(;it != m_listFree.end(); it++)
+	{
+		if( (*it).size > uiMax)
+			uiMax = (*it).size;
+	}
+	return uiMax;
+}
