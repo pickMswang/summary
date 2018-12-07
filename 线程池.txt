@@ -1,0 +1,126 @@
+使用线程池的好处
+1、降低资源消耗：可以重复利用已创建的线程降低线程创建和销毁造成的消耗。
+2、提高响应速度：当任务到达时，任务可以不需要等到线程创建就能立即执行。
+3、提高线程的可管理性：线程是稀缺资源，如果无限制地创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一分配、调优和监控
+线程池的工作原理
+首先我们看下当一个新的任务提交到线程池之后，线程池是如何处理的
+1、线程池判断核心线程池里的线程是否都在执行任务。如果不是，则创建一个新的工作线程来执行任务。如果核心线程池里的线程都在执行任务，则执行第二步。
+2、线程池判断工作队列是否已经满。如果工作队列没有满，则将新提交的任务存储在这个工作队列里进行等待。如果工作队列满了，则执行第三步
+3、线程池判断线程池的线程是否都处于工作状态。如果没有，则创建一个新的工作线程来执行任务。如果已经满了，则交给饱和策略来处理这个任务
+
+template<class T>
+class threadpool
+{
+private:
+	int thread_number;//线程池的线程数
+	pthread_t *all_threads;//线程数组
+	queue<T *>task_queue;//任务队列
+	mutex_locker queue_mutex_locker;//互斥锁
+	cond_locker queue_cond_locker;//条件变量
+	bool is_stop;//是否结束线程
+public:
+	TCPKernel * m_pTCPKernel;
+	threadpool(int thread_num=20);
+	~threadpool();
+	bool append_task(T *task);//添加任务
+	void start();//开启线程池
+	void stop();//线程池关闭
+private:
+	static void *worker(void *arg);
+	void run();
+	T* getTask();//获取任务
+};
+
+template <class T>
+threadpool<T>::threadpool(int thread_num):
+	thread_number(thread_num),is_stop(false),all_threads(NULL)
+{
+	all_threads =new pthread_t[thread_number];
+	if(all_threads ==NULL)
+	{
+		printf("can't init threadpool because thread array can't new\n");
+	}
+
+}
+template <class T>
+threadpool<T>::~threadpool()
+{
+	delete [] all_threads;//new delete 要配对使用
+	stop();
+}
+template <class T>
+void threadpool<T>::stop()
+{
+	is_stop=true;
+	queue_cond_locker.broadcast();//唤醒所有条件变量
+}
+template <class T>
+void threadpool<T>::start()
+{
+	for(int i=0;i<thread_number;++i)
+	{
+		if(pthread_create(all_threads +i,NULL,worker,this)!=0)
+		{
+			//创建线程池失败，清除成功申请的资源并抛出异常
+			delete [] all_threads;
+			throw std::exception();
+		}
+		if(pthread_detach(all_threads[i]))
+		{
+			delete [] all_threads;
+			throw std::exception();
+		}
+	}
+
+}
+
+//添加任务到任务队列
+template <class T>
+bool threadpool<T>::append_task(T *task)
+{
+   //获取互斥锁
+   queue_mutex_locker.mutex_lock();
+   bool is_signal =task_queue.empty();
+   //添加到任务队列
+   task_queue.push(task);
+   queue_mutex_locker.mutex_unlock();
+   //唤醒等待任务的线程
+   if(is_signal)
+   {   //one
+	   queue_cond_locker.signal();
+   }
+   return true;
+}
+
+template <class T>
+void *threadpool<T>::worker(void *arg)//线程工作函数
+{
+	threadpool *pool=(threadpool *)arg;
+	pool->run();
+	return pool;
+}
+template <class T>
+T* threadpool<T>::getTask() //从任务队列中取任务
+{
+	T*task=NULL;
+	queue_mutex_locker.mutex_lock();
+	if(!task_queue.empty())
+	{
+		task=task_queue.front();
+		task_queue.pop();
+	}
+	queue_mutex_locker.mutex_unlock();
+	return task;
+}
+template <class T>
+void threadpool<T>::run()
+{
+	while(!is_stop)
+	{
+		T *task=getTask();
+		if(task==NULL)
+			queue_cond_locker.wait();
+		else
+			task->doit();
+	}
+}
