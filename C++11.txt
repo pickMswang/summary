@@ -1,0 +1,5 @@
+1 nullptr ,可以被转换为任意的其它的指针类型，以前的程序用到名为NULL的预处理变量，它的值就是0；（预处理是运行于编译过程之前的一段程序） 
+2 auto类型说明符，编译器通过初始值来推算变量类型。for(auto i:v),有点像python中for i in [5]; 
+3 vector 列表初始化新方法 vector v = {“li”, “song”, “yu”}; 
+4 数字转字符串，to_string ,字符串转数字，stoi,stol（转long int）; 
+5 override关键字；可以让编译器为我们检测一些错误。
