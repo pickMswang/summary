@@ -1,0 +1,10 @@
+C语言和C++中struct的区别？
+struct 	C语言 	C++
+成员 	没有函数成员，只有数据 	函数和数据都可以有
+访问权限 	没有访问权限的设定，及对外不隐藏数据 	有访问权限的设定private,public,protected
+是否可以继承 	不可以 	有继承关系
+
+C++中struct和class的区别？
+C++ 	struct 	class
+继承默认权限 	struct默认是public 	class默认是private
+定义模板参数 	不可以 	可以
