@@ -1,5 +1,634 @@
-1 nullptr ,可以被转换为任意的其它的指针类型，以前的程序用到名为NULL的预处理变量，它的值就是0；（预处理是运行于编译过程之前的一段程序） 
-2 auto类型说明符，编译器通过初始值来推算变量类型。for(auto i:v),有点像python中for i in [5]; 
-3 vector 列表初始化新方法 vector v = {“li”, “song”, “yu”}; 
-4 数字转字符串，to_string ,字符串转数字，stoi,stol（转long int）; 
-5 override关键字；可以让编译器为我们检测一些错误。
+为什么要用c++11新特性
+c++11增加了很多关键字和新的语法特性
+举一个例子 用c++11新特性就如同在原来的维度里，你要完成一件事情，需要很多个复杂的步骤
+但现在新语法特性里，你可以从另一个维度，很干脆直接就把原来很复杂的问题用简单的方法解决了
+站在巨人的肩膀上可能会看的更远
+即使用以前的c++代码可以解决问题但是引入c++11以后可能更好的解决这个问题，
+可能之前需要很多复杂的代码才能实现的问题现在用简单的代码就可以写完
+学习新技术主要是可以更好的优化代码，让设计更完美
+
+1.1 auto关键字  
+
+decltype关键字 是为了解决auto关键字只能对变量进行类型推到的缺陷而出现的，用法与sizeof相似
+decltype（表达式）
+auto没有让c++成为弱类型语言，没有弱化变量 
+使用auto的时候，编译器根据上下文的情况，确定auto的真正类型
+auto在c++14中可以作为函数的返回值 
+：：：：注意：：：   auto作为函数返回值的时候只能用于定义函数，不能用于声明函数  
+意思就是要把函数的返回值 参数和函数实现都写上    在类中（内联函数）
+#include<iostream>
+using namespace std;
+
+auto AddTest(int a,int b)
+{
+	return a+b;
+}
+int main()
+{
+
+	auto index = 10;
+	auto str = "abc";
+	auto ret =AddTest(1,2);
+	cout<<"index"<<index<<endl;
+	cout<<"str"<<str<<endl;
+	cout<<"res"<<ret<<endl;
+	return 0;
+}
+
+
+1.2 nullptr
+nullptr出现的目的是为了替换NULL
+在某种意义上说传统的C++把NULL，0视为一种东西 有些将NULL定义为((void *)0) 有的会直接将其定义为0
+c++不允许直接将void*隐式转换到其他的类型 但如果 NULL 被定义为 ((void*)0)，
+那么当编译char *ch = NULL;时，NULL 只好被定义为 0。
+
+
+而这依然会产生问题，将导致了 C++ 中重载特性会发生混乱，
+考虑：
+
+
+void foo(char *);
+
+void foo(int);
+
+对于这两个函数来说，如果 NULL 又被定义为了 0 
+那么 foo(NULL); 这个语句将会去调用 foo(int)，
+从而导致代码违反直观。
+
+
+为了解决这个问题
+，C++11 引入了 nullptr 关键字，
+专门用来区分空指针、0。
+
+
+nullptr 的类型为 nullptr_t，能够隐式的转换为任何指针或成员指针的类型，
+也能和他们进行相等或者不等的比较。
+#include<iostream>
+using namespace std;
+class Test
+{
+public:
+	void TestWork(int index)
+	{
+		cout<<"TestWork 1" << endl;
+	}
+	void TestWork(int * index)
+	{
+		cout<<"TestWork 2" << endl;
+	}
+};
+int main()
+{
+	Test test;
+	test.TestWork(NULL);
+	test.TestWork(nullptr);
+	return 0;
+}
+
+区间迭代 基于范围for
+1.3 for循环用法
+auto不仅仅局限于数据 STL容器同样实用
+#include<iostream>
+using namespace std;
+int main()
+{
+
+	int numbers[]={1,2,3,4,5};
+	cout<<"numbers: "<<endl;
+	for(auto number : numbers)
+	{
+		cout<<number<<endl;
+	}
+	return 0;
+}
+1.4初始化列表
+把类对象额初始化与普通数组的初始化提供了统一的桥梁
+Magic magic = {1,2,3,4,5};
+
+1.5模板增强
+外部模板
+在传统的c++中，模板只有在使用时才会被编译器实例化，
+c++11引入外部模板扩充了原来的强制编译器在特定的位置实例化模板的语法，使得能够显示的告诉编译器何时进行
+模板的实例化
+1.6类型别名模板
+传统的C++typedef可以为类型定义一个新的名字，但是没有办法为模板定义一个新的名称  因为模板不是类型
+C++11使用using引入了下面这种形式的写法 并且同时支持对传统的typedef相同的功效
+template <typename T>
+using NewType = SuckType<int, T, 1>;   
+1.6 构造函数
+委托构造
+c++11引入了委托构造，使得构造函数可以在同一个类中一个构造函数调用另一个构造函数从而达到简化代码的目的
+
+继承构造
+在继承体系中，如果派生类想要使用基类的构造函数，需要在构造函数中显示声明
+假若基类拥有为数众多的不同版本的构造函数，这样，在派生类中得写很多对应的“透传”构造函数
+C++11的继承构造：
+
+
+struct A
+{
+
+  A(int i) {}
+ 
+ A(double d,int i){}
+ 
+ A(float f,int i,const char* c){}
+  //...等等系列的构造函数版本
+
+}；
+
+struct B:A
+{
+  
+using A::A;
+  //关于基类各构造函数的继承一句话搞定
+  
+//......
+}；
+
+
+如果一个继承构造函数不被相关的代码使用，编译器不会为之产生真正的函数代码，
+这样比透传基类各种构造函数更加节省目标代码空间。
+
+1.7Lambda 表达式
+实际上就是提供了一个类似匿名函数的特性，而匿名函数则是在需要一个函数，但是又不想费力去命名一个函数
+的情况下去使用
+
+1.8重点
+先看一个简单的例子直观感受下：
+
+string a(x);       // line 1
+ 
+   string b(x + y);                 // line 2
+
+string c(some_function_returning_a_string());      // line 3
+
+
+如果使用以下拷贝构造函数：
+
+s
+tring(const string& that)
+
+{
+    size_t size = strlen(that.data) + 1;
+  
+  data = new char[size];
+  
+  memcpy(data, that.data, size);
+
+}
+
+
+以上3行中，只有第一行(line 1)的x深度拷贝是有必要的，
+因为我们可能会在后边用到x，x是一个左值(lvalues)。
+
+
+第二行和第三行的参数则是右值，因为表达式产生的string对象是匿名对象
+，之后没有办法再使用了。
+
+C++ 11引入了一种新的机制叫做“右值引用”
+，以便我们通过重载直接使用右值参数。我们所要做的就是写一个以右值引用为参数的构造函数：
+
+
+string(string&& that)   // string&& is an rvalue reference to a string
+
+{
+
+data = that.data;
+
+that.data = 0;
+
+}
+
+
+我们没有深度拷贝堆内存中的数据，
+而是仅仅复制了指针，并把源对象的指针置空。
+事实上，我们“偷取”了属于源对象的内存数据。
+由于源对象是一个右值，不会再被使用，因此客户并不会觉察到源对象被改变了。
+在这里，我们并没有真正的复制，所以我们把这个构造函数叫做“转移构造函数”（move constructor）
+，他的工作就是把资源从一个对象转移到另一个对象，而不是复制他们。
+
+有了右值引用，
+再来看看赋值操作符
+：
+
+
+string& operator=(string that)
+
+{
+
+std::swap(data, that.data);
+
+return *this;
+
+}
+
+
+注意到我们是直接对参数that传值，所以that会像其他任何对象一样被初始化，
+那么确切的说，that是怎样被初始化的呢？对于C++ 98，
+答案是复制构造函数，但是对于C++ 11，
+编译器会依据参数是左值还是右值在复制构造函数和转移构造函数间进行选择。
+
+如果是a=b，
+这样就会调用复制构造函数来初始化that（因为b是左值），赋值操作符会与新创建的对象交换数据，深度拷贝。
+这就是copy and swap 惯用法的定义：
+构造一个副本，与副本交换数据，并让副本在作用域内自动销毁。
+这里也一样。
+
+如果是a = x + y，
+这样就会调用转移构造函数来初始化that（因为x+y是右值），
+所以这里没有深度拷贝，只有高效的数据转移。相对于参数，that依然是一个独立的对象，
+但是他的构造函数是无用的（trivial），因此堆中的数据没有必要复制，而仅仅是转移。
+没有必要复制他，因为x+y是右值，再次，从右值指向的对象中转移是没有问题的。
+
+
+总结一下：
+复制构造函数执行的是深度拷贝，因为源对象本身必须不能被改变。
+而转移构造函数却可以复制指针，把源对象的指针置空，这种形式下，
+这是安全的，因为用户不可能再使用这个对象了。
+
+下面我们进一步讨论右值引用和move语义。
+
+
+C++98标准库中提供了一种唯一拥有性的智能指针std::auto_ptr，该类型在C++11中已被废弃
+，因为其“复制”行为是危险的。
+
+
+auto_ptr<Shape> a(new Triangle);
+
+auto_ptr<Shape> b(a);
+
+
+注意b是怎样使用a进行初始化的，它不复制triangle，
+而是把triangle的所有权从a传递给了b，也可以说成“a 被转移进了b”或者“triangle被从a转移到了b”。
+
+
+auto_ptr 的复制构造函数可能看起来像这样（简化）：
+
+
+auto_ptr(auto_ptr& source)   // note the missing const
+
+{
+
+p = source.p;
+source.p = 0;   // now the source no longer owns the object
+
+}
+
+
+auto_ptr 的危险之处在于看上去应该是复制，但实际上确是转移。
+调用被转移过的auto_ptr 的成员函数将会导致不可预知的后果。所以你必须非常谨慎的使用auto_ptr ，
+如果他被转移过。
+
+
+auto_ptr<Shape> make_triangle()
+
+{
+    
+return auto_ptr<Shape>(new Triangle);
+
+
+}
+
+
+auto_ptr<Shape> c(make_triangle());      // move temporary into c
+
+double area = make_triangle()->area();   // perfectly safe
+
+
+auto_ptr<Shape> a(new Triangle);    // create triangle
+
+auto_ptr<Shape> b(a);               // move a into b
+
+double area = a->area();                // undefined behavior
+
+
+显然，在持有auto_ptr 对象的a表达式和持有调用函数返回的auto_ptr值类型的make_triangle()表达式之间
+一定有一些潜在的区别，每调用一次后者就会创建一个新的auto_ptr对象。这里a 其实就是一个左值（lvalue）的例子
+，而make_triangle()就是右值（rvalue）的例子。
+
+
+转移像a这样的左值是非常危险的，因为我们可能调用a的成员函数，
+这会导致不可预知的行为。另一方面，转移像make_triangle()这样的右值却是非常安全的，
+因为复制构造函数之后，我们不能再使用这个临时对象了，
+因为这个转移后的临时对象会在下一行之前销毁掉。
+
+我们现在知道转移左值是十分危险的，
+但是转移右值却是很安全的。如果C++能从语言级别支持区分左值和右值参数，我就可以完全杜绝对左值转移，
+或者把转移左值在调用的时候暴露出来，以使我们不会不经意的转移左值。
+
+
+C++ 11对这个问题的答案是右值引用。右值引用是针对右值的新的引用类型，语法是X&&。
+以前的老的引用类型X& 现在被称作左值引用。
+
+
+使用右值引用X&&作为参数的最有用的函数之一就是转移构造函数X::X(X&& source)，
+它的主要作用是把源对象的本地资源转移给当前对象。
+
+
+C++ 11中，
+std::auto_ptr< T >
+已经被std::unique_ptr< T >所取代，
+后者就是利用的右值引用。
+
+
+其转移构造函数
+：
+
+
+unique_ptr(unique_ptr&& source)   // note the rvalue reference
+
+{
+ 
+   ptr = source.ptr;
+  
+  source.ptr = nullptr;
+
+}
+
+
+这个转移构造函数跟auto_ptr中复制构造函数做的事情一样，
+但是它却只能接受右值作为参数。
+
+
+unique_ptr<Shape> a(new Triangle);
+
+unique_ptr<Shape> b(a);                 // error
+
+unique_ptr<Shape> c(make_triangle());       // okay
+
+第二行不能编译通过，因为a是左值，但是参数unique_ptr&& source只能接受右值，
+这正是我们所需要的，杜绝危险的隐式转移。第三行编译没有问题，因为make_triangle()是右值，
+转移构造函数会将临时对象的所有权转移给对象c，这正是我们需要的。
+
+
+转移左值
+有时候，我们可能想转移左值，也就是说，有时候我们想让编译器把左值当作右值对待，
+以便能使用转移构造函数，即便这有点不安全。出于这个目的，
+C++ 11在标准库的头文件< utility >中提供了一个模板函数std::move。
+实际上，std::move仅仅是简单地将左值转换为右值，它本身并没有转移任何东西。
+它仅仅是让对象可以转移。
+
+以下是如何正确的转移左值：
+
+
+unique_ptr<Shape> a(new Triangle);
+
+unique_ptr<Shape> b(a);              // still an error
+
+unique_ptr<Shape> c(std::move(a));   // okay
+请注意，第三行之后，a不再拥有Triangle对象。不过这没有关系，
+因为通过明确的写出std::move(a)，我们很清楚我们的意图：亲爱的转移构造函数，
+你可以对a做任何想要做的事情来初始化c；我不再需要a了，对于a，您请自便。
+
+当然，
+如果你在使用了mova(a)之后，还继续使用a，那无疑是搬起石头砸自己的脚，还是会导致严重的运行错误。
+
+
+总之，std::move(some_lvalue)将左值转换为右值（可以理解为一种类型转换），
+使接下来的转移成为可能。
+
+一个例子：
+
+
+class Foo
+{
+ 
+   unique_ptr<Shape> member;
+
+
+public:
+
+ 
+   Foo(unique_ptr<Shape>&& parameter)
+ 
+   : member(parameter)   // error
+   
+ {}
+
+};
+
+
+上面的parameter，其类型是一个右值引用，
+只能说明parameter是指向右值的引用，而parameter本身是个左值。
+（Things that are declared as rvalue reference can be lvalues or rvalues. The distinguishing criterion is: 
+if it has a name, then it is an lvalue. Otherwise, it is an rvalue.）
+
+
+因此以上对parameter的转移是不允许的，需要使用std::move来显示转换成右值。
+
+
+2.STL容器
+2.1 std::array  如数组没有太大的区别  增加了迭代器等函数
+2.2 std::forward_list 与list的区别是单向链表
+2.3 std::unordered_map 内部由哈希表实现 哈希map理论上查找效率为o（1） 但在存储效率上需要哈希表的内存开销
+2.4 std::unordered_set 的数据存储结构也是哈希表的方式结构，并且在插入的时候不会自动排序，
+
+3.多线程
+c++11引入了boost库中多线程部分内容，形成c++标准
+
+3.1 std::thread
+c++11线程类 
+#include<iostream>
+#include<thread>
+using namespace std;
+void threadfun1()
+{
+	cout <<"threadfun1 - 1\r\n"<<endl;
+	this_thread::sleep_for(chrono::seconds(6));
+	cout<<"threadfun1 -2"<<endl;
+}
+void threadfun2(int iParam,string sParam)
+{
+	cout<<"threadfun2 -1"<<endl;
+	this_thread::sleep_for(chrono::seconds(10));
+	cout<<"threadfun2 -2"<<endl;
+}
+int main()
+{
+	thread t1(threadfun1);
+	thread t2(threadfun2,10,"abc");
+	t1.join();
+	cout<<"join"<<endl;
+	t2.detach();
+	cout<<"detach"<<endl;
+	return 0;
+}
+t1.join()会等待t1线程退出后才继续往下执行，t2.detach()并不会等待，
+detach字符输出后，主函数退出，
+threadfun2还未执行完成，但是在主线程退出后，
+t2的线程也被已经被强退出。
+
+3.2 std::atomic
+为c++11封装的原子数据类型
+原子数据类型 ： 从功能上看原子数据类型不会发生数据竞争，能直接用在多线程中而不必用户对其进行添加
+互斥资源锁的类型，从实际上可以理解为原子类型内部自己加了锁
+#include<thread>
+#include<iostream>
+#include<stdio.h>
+#include<list>
+#include<atomic>
+using namespace std;
+atomic_bool bIsReady(false);
+atomic_int iCount(100);
+void threadfun1()
+{
+	if(!bIsReady)
+	{
+		this_thread::yield();
+	}
+	while(iCount>0)
+	{
+		printf("iCount:%d\r\n",iCount--);
+	}
+}
+int main()
+{
+	atomic_bool b;
+	list<thread>lstThread;
+	for(int i=0;i<10;++i)
+	{
+		lstThread.push_back(thread(threadfun1));
+	}
+	for(auto&th:lstThread)
+	{
+		th.join();
+	}
+	return 0;
+}
+
+3.3 std::condition_variable
+就像pthread_cond_wait和pthread_cond_signal一样，可以让线程休眠，直到别唤醒，现在在从新执行。
+线程等待在多线程编程中使用非常频繁，经常需要等待一些异步执行的条件的返回结果。
+
+4智能指针内存管理
+在内存管理方面c++11的auto_ptr基础上移植了boost库中智能指针的部分实现，如std::shared_ptr,std::weak_ptr，
+智能指针简单的说只是对象去管理一个资源指针，同时用一个计数器计算当前指针引用对象的个数，当管理指针的
+对象增加或减少时，计数器相应的加1或减1，当最后一个指针管理对象销毁时计数器为1，此时在销毁指针管理对象
+的同时，也把指针管理对象所管理的指针进行delete操作
+4.1std::shared_ptr 包装了new操作符动态分配的内存，可以自由的拷贝复制，
+#include<iostream>
+#include<memory>
+using namespace std;
+class Test
+{
+public:
+	Test()
+	{
+		cout<< "Test()"<<endl;
+	}
+	~Test()
+	{
+		cout <<"~Test()"<<endl;
+	}
+};
+int main()
+{
+	shared_ptr<Test> p1=make_shared<Test>();
+	cout<<"1 ref: "<<p1.use_count()<<endl;
+	{
+		shared_ptr<Test> p2=p1;
+		cout <<"2 ref :"<<p1.use_count()<<endl;
+
+	}
+	cout<<"3 ref :"<<p1.use_count()<<endl;
+	return 0;
+}
+
+4.2std::weak_ptr是为了解决std::shared_ptr 在相互引用的情况下出现问题而存在的，他最大的特点就是
+不引起智能指针计数增加
+//示例代码1.0 http://www.cnblogs.com/feng-sc/p/5710724.html
+#include <memory>
+class TestB;
+class TestA
+{
+public:
+    TestA()
+    {
+        std::cout << "TestA()" << std::endl;
+    }
+    void ReferTestB(std::shared_ptr<TestB> test_ptr)
+    {
+        m_TestB_Ptr = test_ptr;
+    }
+    void TestWork()
+    {
+        std::cout << "~TestA::TestWork()" << std::endl;
+    }
+    ~TestA()
+    {
+        std::cout << "~TestA()" << std::endl;
+    }
+private:
+    std::weak_ptr<TestB> m_TestB_Ptr;
+};
+
+class TestB
+{
+public:
+    TestB()
+    {
+        std::cout << "TestB()" << std::endl;
+    }
+
+    void ReferTestB(std::shared_ptr<TestA> test_ptr)
+    {
+        m_TestA_Ptr = test_ptr;
+    }
+    void TestWork()
+    {
+        std::cout << "~TestB::TestWork()" << std::endl;
+    }
+    ~TestB()
+    {
+        std::shared_ptr<TestA> tmp = m_TestA_Ptr.lock();
+        tmp->TestWork();
+        std::cout << "2 ref a:" << tmp.use_count() << std::endl;
+        std::cout << "~TestB()" << std::endl;
+    }
+    std::weak_ptr<TestA> m_TestA_Ptr;
+};
+
+
+int main()
+{
+    std::shared_ptr<TestA> ptr_a = std::make_shared<TestA>();
+    std::shared_ptr<TestB> ptr_b = std::make_shared<TestB>();
+    ptr_a->ReferTestB(ptr_b);
+    ptr_b->ReferTestB(ptr_a);
+    std::cout << "1 ref a:" << ptr_a.use_count() << std::endl;
+    std::cout << "1 ref b:" << ptr_a.use_count() << std::endl;
+    return 0;
+}
+
+1、所有的对象最后都能正常释放，不会存在上一个例子中的内存没有释放的问题。
+
+2、ptr_a 和ptr_b在main函数中退出前，引用计数均为1，也就是说，
+在TestA和TestB中对std::weak_ptr的相互引用，不会导致计数的增加。在TestB析构函数中，
+调用std::shared_ptr<TestA> tmp = m_TestA_Ptr.lock()，
+把std::weak_ptr类型转换成std::shared_ptr类型，然后对TestA对象进行调用。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
