@@ -1,0 +1,272 @@
+MFC
+单文档：消息---外观--（菜单、工具栏、状态栏）--绘图板（截图功能）
+窗口创建过程
+Windows消息响应机制
+消息  3类-3课时
+标准消息（窗口消息）：所有以WM_开头的，除了WM_COMMAND ,WM_NOTIFY 都叫做标准消息
+命令消息：WM_COMMAND ,发送者：菜单、工具栏、状态栏、加速键
+控件消息（通知消息）：3类格式（标准消息格式 、命令消息格式、WM_NOTIFY） 发送者：控件
+
+自定义消息：
+发送消息：
+postmessage 进消息队列，程序空闲时再去执行
+sendmessage 不进消息队列，立即执行
+消息实现：
+
+函数原型：
+LRESULT 函数名（WPARAM,LPARAM）；
+消息映射：
+ON_MESSAGE(消息ID，函数地址)
+
+
+消息截获：
+1.了解消息流程
+
+2.截获命令消息
+只要知道命令消息的路径，我们可以选择在框架类中重写oncommand函数
+BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
+{
+	//截获命名消息
+	//判断命令消息ID是不是想要的
+	if (ID_HELP_TEST == wParam)
+	{
+		MessageBox(_T("截获了命令消息ID_HELP_TEST"));
+       return FALSE; 
+	}
+
+	return CFrameWnd::OnCommand(wParam, lParam);
+}
+3.截获标准消息
+由于标准消息是在CWnd::Onwndmsg，中处理，所以可以在框架和视图类中分别重写Onwndmsg，怎么确定是在哪个类中响应，通过实验证明，消息发送给哪个窗口在哪个窗口截获得到
+BOOL CMainFrame::OnWndMsg(UINT message, WPARAM wParam, LPARAM lParam, LRESULT* pResult)
+{
+	// TODO: 在此添加专用代码和/或调用基类
+   if (WM_COMMAND == message)
+   {
+	   if (ID_HELP_TEST == wParam)
+	   {
+		   MessageBox(_T("CMainFrame::OnWndMsg截获命令消息ID_HELP_TEST"));
+	   }
+   }
+   //截获标准消息view lbuttondown
+   if (WM_LBUTTONDOWN == message)
+   {
+      MessageBox(_T("CMainFrame::OnWndMsg截获标准消息"));
+   }
+  //截获自定义消息 
+   if (UM_VIEWTOFRAME == message)
+   {
+	   MessageBox(_T("截获了自定义消息"));
+	   return FALSE;
+   }
+	return CFrameWnd::OnWndMsg(message, wParam, lParam, pResult);
+}
+
+4.截获自定义消息
+需要知道是发向哪个窗口，则可以在对应窗口中截获得到
+代码在上面
+
+5.截获退出消息WM_QUIT
+//	WM_CLOSE  关闭窗口，不进消息队列
+//	WM_DESTROY 销毁窗口，不进消息队列
+//	WM_QUIT 退出应用程序，不进消息队列
+由于在消息循环中，getmessage获得到退出消息，直接退出应用程序。所以我们自己写了一个消息循环截获。
+MSG msg;
+	
+	while (1)
+	{
+		//截获消息
+		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+		{
+			//判断是不是退出消息
+			if(WM_QUIT == msg.message)
+			{
+             // AfxMessageBox(_T("wm_quitla "));
+			/*  this->PostMessage(WM_QUIT);
+			  ::PostMessage()*/
+			  PostQuitMessage(0);
+			 break;
+
+			}
+           if (WM_COMMAND == msg.message)
+           {
+			   if (ID_HELP_END == msg.wParam)
+			   {
+				   break;
+			   }
+           }
+			//预处理
+			//翻译 分发
+			
+			if (!AfxPreTranslateMessage(&msg))
+			{
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+		}
+	
+	}
+
+菜单 --- CMenu—2课时
+1.加载自己菜单
+//移走菜单
+  SetMenu(NULL);
+	
+  m_pmenu = new CMenu;
+  //加载资源菜单
+  m_pmenu->LoadMenu(IDR_MENU1);
+  //设置菜单
+  SetMenu(m_pmenu);
+知识点：指针问题、局部对象的处理方法 
+     第一种：将局部对象变为全局
+     第二种：将局部对象变为静态的
+     第三种：将局部对象与资源分离
+     第四种：给局部指针申请空间
+2.批处理
+函数原型：afx_msg void 函数名（UINT）；
+消息映射:ON_COMMAND_RANGE(起始ID,结束ID,响应函数）
+实例：
+在头文件中： afx_msg  void  OnShow (UINT nid);
+在源文件中：ON_COMMAND_RANGE(ID,IDLAST,& CmenuView::OnShow)
+void CmenuView::OnShow(UINT nid)
+{
+   
+		switch (nid)
+		{
+		case ID_POP_MAX:
+			AfxGetMainWnd()->ShowWindow(SW_SHOWMAXIMIZED);
+			break;
+		case ID_POP_SHOW:
+			AfxGetMainWnd()->ShowWindow(SW_SHOW);
+			break;
+		case ID_POP_MIN:
+			AfxGetMainWnd()->ShowWindow(SW_SHOWMINIMIZED);
+			break;
+		case ID_POP_HIDE:
+			AfxGetMainWnd()->ShowWindow(SW_HIDE);
+			break;
+		}
+}
+知识点：一堆相同的消息或者相同的控件，都可以通过批处理来解决问题。如：
+      ON_CONTROL_RANGE 、 ON_NOTIFY_RANGE 
+
+3.右键菜单
+//1.定义菜单对象
+	 CMenu menu;
+	// ClientToScreen(&point);
+	 //获得当前鼠标点坐标--基于屏幕的
+	  CPoint pt;
+	  GetCursorPos(&pt);
+	//2.加载菜单
+	 menu.LoadMenu(IDR_MENU1);
+	//3.获得当前菜单的子菜单并弹出
+	menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON,pt.x,pt.y,GetParent());
+4.托盘图标
+  NOTIFYICONDATA m_notifydata;
+    m_notifydata.cbSize = sizeof(NOTIFYICONDATA);
+	m_notifydata.hWnd   = m_hWnd;
+	m_notifydata.uFlags = NIF_ICON|NIF_MESSAGE|NIF_TIP;
+	//如果托盘图标发送的是命令消息，则ID必须为0
+//如果托盘图标发送的是自定义消息，则ID为除了0-12的数
+m_notifydata.uID  =  0;
+
+	m_notifydata.uCallbackMessage = WM_COMMAND;
+	m_notifydata.hIcon = theApp.LoadIcon(IDR_MAINFRAME);
+	wcscpy(m_notifydata.szTip,_T("我的窗口"));
+	Shell_NotifyIcon(NIM_ADD,&m_notifydata);
+在图标上右键菜单
+if (WM_COMMAND == message)
+    {
+		if (!wParam)
+		{
+			if (WM_RBUTTONDOWN == lParam)
+			{
+				CMenu menu;
+				// ClientToScreen(&point);
+				//获得当前鼠标点坐标--基于屏幕的
+				CPoint pt;
+				GetCursorPos(&pt);
+				//2.加载菜单
+				menu.LoadMenu(IDR_MENU1);
+				//3.获得当前菜单的子菜单并弹出
+				menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN|TPM_RIGHTBUTTON,pt.x,pt.y,this);
+			}
+			
+		}
+    }
+
+工具栏、状态栏- 0.5课时
+1.创建工具栏
+2.给工具栏添加响应事件（复习命令消息）
+绘图板
+
+1.基本绘图知识
+Win32 和MFC 区别
+  //获得系统中的设备上下文--（笔）
+	//HDC hdc  = ::GetDC(this->m_hWnd);
+	////划线
+ //  //从按下点开始画
+	//::MoveToEx(hdc,m_point.x,m_point.y,NULL);
+	//::LineTo(hdc,point.x,point.y);
+	//::ReleaseDC(m_hWnd,hdc);
+
+	//mfc
+	/*CDC *pdc = GetDC();
+    pdc->MoveTo(m_point);
+	pdc->LineTo(point);
+	ReleaseDC(pdc);*/
+	//客户区DC
+	/*CClientDC dc(this);
+   dc.MoveTo(m_point);
+   dc.LineTo(point);*/
+	//窗口Dc 
+	CWindowDC dc(GetDesktopWindow());
+	dc.MoveTo(m_point);
+	dc.LineTo(point);
+画曲线、椭圆、矩形、多边形
+2.实现过程画线—内存DC – 双缓冲
+CClientDC dc(this);
+	//获得视图的大小
+	CRect rect;
+	//GetClientRect(&rect);
+	GetDesktopWindow()->GetWindowRect(&rect);
+	//创建兼容性DC
+	m_dc.CreateCompatibleDC(&dc);
+	//彩色的图片--当前DC  黑白--内存dc
+	m_bitmap.CreateCompatibleBitmap(&dc,rect.Width(),rect.Height());
+
+	//将位图选入当前设备上下文
+	m_dc.SelectObject(&m_bitmap);
+
+	CBrush brush(RGB(255,255,255));
+	m_dc.FillRect(&rect,&brush);
+实现原理：每次鼠标抬起将现在的图形存在内存图片上，随着鼠标移动不停的在画图形，由于有背景，在画图之前将内存图片铺到当前。
+3.前进、后退
+通过链表实现：
+
+
+对话框：
+1.对话框的创建 模态对话框和非模态对话框的区别
+2.控件的应用 –EditControl
+三种方法： 1.添加控件类型的变量
+           2.添加value类型的变量
+           3.不常用的控件获得控件的指针
+垃圾清理工具
+  基本思路：首先， 获得要删除的文件后缀并串成链表
+其次，获得要搜索的文件路径的所有文件并串成链表
+最后，遍历文件路径链表中所有文件与后缀链表比较，匹配的文件列出。选择性删除。
+ 界面操作：1、picture Control
+          知识点： 类思想 
+         2.   tabcontrol
+      知识点：本地化编程  、面对对象思想
+操作系统：是对硬件的一次扩充。
+
+线程
+进程
+
+msdn 
+调试程序
+
+
+刘爽
+15046691259
